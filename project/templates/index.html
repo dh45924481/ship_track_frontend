@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>船舶管理系统</title>
+    <!-- 引入Socket.IO客户端库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <!-- 引入自定义样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div>cpyhzhcz123</div>
+        <div id="datetime"></div>
+    </div>
+    
+    <div class="info-panel" id="infoPanel" style="display: none;">
+        <h3>船舶信息</h3>
+        <div id="shipInfo"></div>
+    </div>
+
+    <!-- 添加Tab容器 -->
+    <div class="tab-container">
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="switchTab('tab1')">船舶监控</button>
+            <button class="tab-button" onclick="switchTab('tab2')">数据分析</button>
+            <button class="tab-button" onclick="switchTab('tab3')">系统设置</button>
+        </div>
+
+        <!-- Tab1: 原有的船舶监控内容 -->
+        <div id="tab1" class="tab-content active">
+            <div class="navigation">
+                <!-- 原有的按钮组和船舶容器内容 -->
+                <div class="button-group">
+                    <button class="button">起点检测</button>
+                    <button class="button">闸上上行人入检测</button>
+                    <button class="button">深浮物检测</button>
+                </div>
+                <div class="button-group" style="margin-top: -10px;">
+                    <button class="button">超警戒线</button>
+                    <button class="button">系缆识别</button>
+                    <button class="button">换缆提醒</button>
+                </div>        
+                <div class="ship-buttons" id="shipContainer">
+                    <!-- 船舶按钮将通过JavaScript动态添加 -->
+                </div>
+                <div class="button-group">
+                    <button class="button">闸门双开放置</button>
+                    <button class="button">闸上上行人入检测</button>
+                    <button class="button">通过锁检测</button>
+                </div>
+            </div>
+            
+            <table id="shipTable">
+                <!-- 原有的表格内容 -->
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>编号</th>
+                        <th>方向点位</th>
+                        <th>时间</th>
+                        <th>船舶号码</th>
+                        <th>状态</th>
+                        <th>详情</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab2: 数据分析 -->
+        <div id="tab2" class="tab-content">
+            <div class="navigation">
+                <h2>数据分析</h2>
+                <div class="button-group">
+                    <button class="button">通行量统计</button>
+                    <button class="button">事件分析</button>
+                    <button class="button">性能报告</button>
+                </div>
+                <!-- 这里可以添加图表、统计数据等内容 -->
+                <!-- 添加数据展示区域 -->
+                <div class="data-display">
+                    <div id="traffic" class="section">
+                        <h3>船舶检测结果</h3>
+                        <table id="shipTable3">
+                            <!-- 原有的表格内容 -->
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>编号</th>
+                                    <th>方向点位</th>
+                                    <th>时间</th>
+                                    <th>船舶号码</th>
+                                    <th>状态</th>
+                                    <th>详情</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+
+
+                    </div>
+                    
+                    <div id="events" class="section" style="display:none;">
+                        <h3>事件分析内容</h3>
+                        <!-- 事件分析的内容 -->
+                    </div>
+                    
+                    <div id="performance" class="section" style="display:none;">
+                        <h3>性能报告内容</h3>
+                        <!-- 性能报告的内容 -->
+                    </div>
+                </div>                
+            </div>
+        </div>
+
+        <!-- Tab3: 系统设置 -->
+        <div id="tab3" class="tab-content">
+            <div class="navigation">
+                <h2>系统设置</h2>
+                <div class="button-group">
+                    <button class="button">用户管理</button>
+                    <button class="button">报警设置</button>
+                    <button class="button">系统配置</button>
+                </div>
+                <!-- 这里可以添加设置相关的内容 -->
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,239 @@
+/* 基础样式 */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+/* 添加信息面板样式 */
+.info-panel {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    max-width: 300px;
+}
+
+/* 头部样式 */
+.header {
+    background: linear-gradient(to right, #006400, #008000);
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* 船舶按钮样式 */
+.ship-button {
+    position: absolute;
+    border: 1px solid #4CAF50;
+    background-color: white;
+    padding: 5px 15px;
+    cursor: move;
+}
+
+/* 其他样式... */
+/* 原有样式保持不变 */
+/* ... */
+body {
+    background-image: url('/images/ship_20241216205136.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)),
+                repeating-linear-gradient(45deg, 
+                    #f0f8ff 0px, #f0f8ff 40px,
+                    #e6f3ff 40px, #e6f3ff 80px);
+    position: relative;
+}
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    opacity: 0.1;
+    background: 
+        /* 水面波纹 */
+        repeating-linear-gradient(0deg,
+            transparent 0px,
+            transparent 20px,
+            rgba(0, 100, 150, 0.1) 20px,
+            rgba(0, 100, 150, 0.1) 40px),
+        /* 点状装饰 */
+        radial-gradient(circle at 50% 50%,
+            rgba(0, 100, 150, 0.2) 0%,
+            transparent 10%);
+    background-size: 100% 40px, 50px 50px;
+    animation: waterMove 10s linear infinite;
+}
+/* 添加水波动画 */
+@keyframes waterMove {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 0 40px;
+    }
+}
+.header {
+    background: linear-gradient(to right, #006400, #008000);
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+.navigation {
+    border: 1px solid #ccc;
+    margin: 20px;
+    padding: 20px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.button-row {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}        
+.button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* 添加状态指示器样式 */
+.status-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #gray;
+}
+.status-normal {
+    background-color: #4CAF50;
+}
+.status-warning {
+    background-color: #ff9800;
+}
+.status-error {
+    background-color: #f44336;
+}
+
+.ship-buttons {
+    position: relative;
+    min-height: 100px;
+    border: 1px dashed #ccc;
+    margin: 10px 0;
+    padding: 10px;
+}
+.ship-button {
+    position: absolute;
+    border: 1px solid #4CAF50;
+    background-color: white;
+    color: #4CAF50;
+    padding: 5px 15px;
+    border-radius: 3px;
+    cursor: move;
+    user-select: none;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.8);
+}
+.ship-button.dragging {
+    opacity: 0.5;
+    z-index: 1000;
+}
+/* 添加船舶图案装饰 */
+.ship-buttons::before {
+    content: '⛴';
+    position: absolute;
+    font-size: 50px;
+    opacity: 0.1;
+    right: 20px;
+    bottom: 20px;
+    transform: rotate(-10deg);
+}
+
+/* 添加信息面板样式 */
+.info-panel {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    max-width: 300px;
+}
+
+/* 原有表格样式 */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+th {
+    background-color: #4CAF50;
+    color: white;
+}
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+/* 添加Tab样式 */
+.tab-container {
+    margin: 20px;
+}
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+.tab-button {
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    background-color: #f8f8f8;
+    cursor: pointer;
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+}
+.tab-button.active {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
+}
