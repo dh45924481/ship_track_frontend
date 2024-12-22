@@ -6,17 +6,11 @@ pip install Flask-Migrate==4.0.7
 
 pip install mysql-connector-python==9.1.0
 
+pip install Flask-Login==0.6.3
+
 flask run 启动程序
 
 127.0.0.1:5000打开网页
-
-
-
-
-
-
-
-
 
 pip install -r requirements.txt
 
