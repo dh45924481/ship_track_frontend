@@ -4,7 +4,7 @@ from app import app
 from app.decorators import admin_required,permission_required
 from app.models import Permission
 from app.models import User
-from flask_login import login_required,LoginManager,login_user,UserMixin,logout_user,current_user
+from flask_login import login_required,LoginManager,login_user,UserMixin,logout_user,current_user,logout_user
 from .. import login_manager
 from . import auth
 
@@ -31,8 +31,9 @@ def login():
         flash('用户名或密码错误！','error')
     return render_template('login.html')
 
-@auth.route("/logout")
+@auth.route("/logout",methods=['POST'])
 @login_required
 def logout():
     logout_user()
+    flash('您已成功退出系统')
     return redirect(url_for('.login'))

@@ -131,11 +131,25 @@
             color: white;
             cursor: pointer;
             transition: var(--transition);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logout-btn::before {
+            content: '👤';
+            font-size: 1.1rem;
         }
 
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
         }
 
         .monitor-layout {
@@ -939,7 +953,7 @@
             </div>
             <div class="navbar-right">
                 <div class="datetime" id="datetime"></div>
-                <!-- <button class="logout-btn">退出系统</button> -->
+                <button class="logout-btn" onclick="logout()">退出系统</button>
             </div>
         </div>
     </nav>
@@ -1253,7 +1267,23 @@
         //     });
         // });
 
-
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/login';  // 重定向到登录页面
+                    } else {
+                        throw new Error('登出失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('退出系统失败，请重试');
+                });
+        }
 
         // 修改tab切换事件，添加表格数据加载
         document.addEventListener('DOMContentLoaded', function () {
