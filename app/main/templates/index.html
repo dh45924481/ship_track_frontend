@@ -401,6 +401,100 @@
             border-bottom: none;
         }
 
+
+        /* 船舶按钮样式 */
+        .ship-button {
+            position: absolute;
+            width: 120px;
+            height: 40px;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            border-radius: 8px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
+            /* 添加平滑过渡效果 */
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            /* 添加上下浮动动画 */
+            animation: shipFloat 3s ease-in-out infinite;
+        }
+
+        /* 添加上下浮动动画 */
+        @keyframes shipFloat {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* 船头船尾样式优化 */
+        .ship-button::before,
+        .ship-button::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ship-button::before {
+            left: -15px;
+            border-right: 15px solid #1a73e8;
+        }
+
+        .ship-button::after {
+            right: -15px;
+            border-left: 15px solid #4285f4;
+        }
+
+        .ship-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(26, 115, 232, 0.3);
+        }
+
+        /* 船舶信息弹窗样式 */
+        .ship-info-popup {
+            position: absolute;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 200px;
+            display: none;
+        }
+
+        .ship-info-popup.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .ship-info-item {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .ship-info-item:last-child {
+            border-bottom: none;
+        }
+
         .ripple {
             position: absolute;
             background: rgba(255, 255, 255, 0.7);
@@ -1088,26 +1182,119 @@
 
         // 模拟船舶数据，实际应用中应从服务器获取
         const ships = [
-            { name: "远宁998", x: 10, y: 10, status: "正常" },
-            { name: "运沙船", x: 10, y: 80, status: "警告" }
+            {
+                id: 1,
+                name: "远宁998",
+                position: { left: "30%", top: "30%" },
+                info: {
+                    length: "120米",
+                    width: "15米",
+                    draft: "4.5米",
+                    status: "正常通行",
+                    direction: "上行"
+                }
+            },
+            {
+                id: 2,
+                name: "运沙船",
+                position: { left: "60%", top: "50%" },
+                info: {
+                    length: "80米",
+                    width: "12米",
+                    draft: "3.8米",
+                    status: "等待通行",
+                    direction: "下行"
+                }
+            }
         ];
 
+        // 创建船舶按钮
         function createShipButtons() {
-            const container = document.getElementById('shipContainer');
+            const container = document.querySelector('.lock-chamber-container');
+
             ships.forEach(ship => {
-                const button = document.createElement('button');
-                button.className = 'ship-button';
-                button.textContent = ship.name;
-                button.style.left = ship.x + 'px';
-                button.style.top = ship.y + 'px';
+                const shipButton = document.createElement('button');
+                shipButton.className = 'ship-button';
+                shipButton.textContent = ship.name;
+                shipButton.style.left = ship.position.left;
+                shipButton.style.top = ship.position.top;
 
-                const statusIndicator = document.createElement('div');
-                statusIndicator.className = 'status-indicator';
-                button.appendChild(statusIndicator);
+                shipButton.addEventListener('click', () => showShipInfo(ship, shipButton));
 
-                container.appendChild(button);
+                container.appendChild(shipButton);
             });
         }
+
+        // 显示船舶信息
+        function showShipInfo(ship, button) {
+            // 移除已存在的弹窗
+            const existingPopup = document.querySelector('.ship-info-popup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+
+            const popup = document.createElement('div');
+            popup.className = 'ship-info-popup';
+
+            popup.innerHTML = `
+        <h3 style="margin-bottom: 10px; color: #1a73e8; border-bottom: 2px solid #1a73e8;">
+            ${ship.name}
+        </h3>
+        <div class="ship-info-item">
+            <span>长度：</span>
+            <span>${ship.info.length}</span>
+        </div>
+        <div class="ship-info-item">
+            <span>宽度：</span>
+            <span>${ship.info.width}</span>
+        </div>
+        <div class="ship-info-item">
+            <span>吃水：</span>
+            <span>${ship.info.draft}</span>
+        </div>
+        <div class="ship-info-item">
+            <span>状态：</span>
+            <span>${ship.info.status}</span>
+        </div>
+        <div class="ship-info-item">
+            <span>方向：</span>
+            <span>${ship.info.direction}</span>
+        </div>
+    `;
+
+            // 计算弹窗位置
+            const buttonRect = button.getBoundingClientRect();
+            popup.style.left = `${buttonRect.right + 10}px`;
+            popup.style.top = `${buttonRect.top}px`;
+
+            document.body.appendChild(popup);
+            popup.classList.add('show');
+
+            // 点击其他地方关闭弹窗
+            document.addEventListener('click', function closePopup(e) {
+                if (!popup.contains(e.target) && e.target !== button) {
+                    popup.remove();
+                    document.removeEventListener('click', closePopup);
+                }
+            });
+        }
+
+        // 页面加载时创建船舶按钮
+        document.addEventListener('DOMContentLoaded', createShipButtons);
+
+        // 定期更新船舶位置（模拟移动）
+        setInterval(() => {
+            const shipButtons = document.querySelectorAll('.ship-button');
+            shipButtons.forEach((button, index) => {
+                const currentLeft = parseFloat(button.style.left);
+                // 根据实际需求设置移动逻辑
+                if (index === 0) { // 第一艘船向右移动
+                    button.style.left = `${(currentLeft + 0.1) % 80}%`;
+                } else { // 第二艘船向左移动
+                    button.style.left = `${Math.max(20, (currentLeft - 0.1))}%`;
+                }
+            });
+        }, 100);
 
         // 基础船舶可视化类
         class ShipVisualization {
