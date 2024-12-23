@@ -1,45 +1,77 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>船舶管理系统</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/swiper-bundle.min.css') }}">
-    <script src="{{ url_for('static', filename='js/socket.io.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/index.js') }}"></script> -->
+    <title>智能船闸监控系统</title>
     <style>
-        /* 基础样式重置和全局设置 */
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #4285f4;
+            --success-color: #34a853;
+            --warning-color: #fbbc05;
+            --danger-color: #ea4335;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-radius: 10px;
+            --transition: all 0.3s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
         }
 
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: #f5f7fa;
-            color: #333;
+            background: var(--background-color);
+            color: var(--text-primary);
             line-height: 1.6;
-            min-height: 100vh;
         }
 
-        /* 顶部导航栏样式 */
-        .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 15px 20px;
+        .navbar {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            flex-direction: column;
+            padding: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            color: white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .header div {
-            font-size: 1.2em;
+        .navbar-title {
+            font-size: 1.5rem;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        /* Tab页样式 */
+        .navbar-title::before {
+            content: '📊';
+            font-size: 1.8rem;
+        }
+
+        .navbar-top {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            width: 100%;
+        }
+
         .tab-buttons {
             display: flex;
             gap: 10px;
@@ -49,10 +81,10 @@
         .tab-button {
             background: transparent;
             border: none;
-            color: rgba(255, 255, 255, 0.7);
+            color: white;
             padding: 10px 20px;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 1.2em;
             transition: all 0.3s ease;
             border-bottom: 2px solid transparent;
         }
@@ -75,214 +107,435 @@
             display: block;
         }
 
-        /* 导航区域样式 */
-        .navigation {
-            background: white;
-            margin: 20px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-            position: relative;
-            min-height: 400px;
-        }
-
-        /* 顶部按钮组样式 */
-        .top-buttons {
+        .navbar-right {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            gap: 10px;
-            padding: 0 20px;
+            align-items: center;
+            gap: 2rem;
         }
 
-        /* 按钮基础样式 */
-        .button {
+
+
+
+        .datetime {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 1rem;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            min-width: 100px;
-            text-align: center;
-            background-color: #28a745;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
-        .button::after {
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .monitor-layout {
+            position: relative;
+            height: 390px;
+            margin: 2rem;
+            background: var(--card-background);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: center;
+            /* 水平居中 */
+            align-items: center;
+            /* 垂直居中 */
+        }
+
+        .lock-chamber-container {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            /* 完美居中 */
+            width: 800px;
+            height: 200px;
+            background: linear-gradient(180deg, #e8f0fe 0%, #c2e7ff 100%);
+            border-radius: 16px;
+            box-shadow: inset 0 0 40px rgba(26, 115, 232, 0.2);
+            border: 2px solid rgba(26, 115, 232, 0.1);
+            overflow: hidden;
+            z-index: 1;
+            /* 确保显示在其他元素上方 */
+        }
+
+        .lock-chamber-container::after {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(180deg, transparent, rgba(26, 115, 232, 0.1));
+            pointer-events: none;
         }
 
-        .button:hover::after {
-            width: 300%;
-            height: 300%;
+        .button-group {
+            position: relative;
+            z-index: 2;
+            /* 确保按钮显示在正确的层级 */
+        }
+
+        .button-group.top {
+            grid-area: top;
+            justify-content: center;
+            flex-direction: row;
+        }
+
+        .button-group.bottom {
+            grid-area: bottom;
+            justify-content: center;
+            flex-direction: row;
+        }
+
+        .button-group.left {
+            grid-area: left;
+        }
+
+        .button-group.right {
+            grid-area: right;
+        }
+
+        .button {
+            background: white;
+            border: 1px solid rgba(26, 115, 232, 0.2);
+            padding: 8px 15px;
+            /* 减小内边距 */
+            border-radius: 8px;
+            /* 稍微减小圆角 */
+            color: var(--text-primary);
+            cursor: pointer;
+            display: inline-flex;
+            /* 使用inline-flex */
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            width: max-content;
+            /* 让宽度适应内容 */
+            min-width: unset;
+            /* 移除最小宽度限制 */
         }
 
         .button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+            border-color: var(--primary-color);
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
         }
 
-        .button:active {
-            transform: scale(0.95);
-        }
 
-        /* 状态指示器样式 */
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+
+        .ship {
             position: absolute;
-            top: -6px;
-            right: -6px;
-            border: 2px solid white;
-            transition: all 0.5s ease;
-            animation: pulse 2s infinite;
-        }
-
-        .status-normal {
-            background-color: #28a745;
-        }
-
-        .status-warning {
-            background-color: #ffc107;
-        }
-
-        .status-error {
-            background-color: #dc3545;
-        }
-
-        /* 船舶区域样式 */
-        .ship-buttons {
-            position: relative;
-            margin: 40px auto;
-            padding: 20px;
-            height: 200px;
-            width: calc(100% - 400px);
-            border: 2px dashed #e0e0e0;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-        }
-
-        .ship-button {
-            background: white;
-            border: 2px solid #28a745;
-            color: #28a745;
-            padding: 10px 20px;
+            width: 120px;
+            height: 40px;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
             border-radius: 8px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2);
+            animation: shipFloat 3s ease-in-out infinite;
         }
 
-        .ship-button:hover {
-            background: #28a745;
-            color: white;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.2);
+        .ship::before,
+        .ship::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
         }
 
-        /* 查询表单样式 */
-        .query-form {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-            margin: 20px 0;
+        .ship::before {
+            left: -15px;
+            border-right: 15px solid #1a73e8;
         }
 
-        .query-form .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
+        .ship::after {
+            right: -15px;
+            border-left: 15px solid #4285f4;
         }
 
-        .query-form .input-group {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        @keyframes shipFloat {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
         }
 
-        .query-form label {
-            font-weight: 600;
-            color: #495057;
-            margin-right: 8px;
-        }
-
-        .query-form input[type="datetime-local"],
-        .query-form select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            min-width: 200px;
-        }
-
-        .query-form select {
-            min-width: 100px;
-        }
-
-        .query-form input:focus,
-        .query-form select:focus {
-            border-color: #28a745;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
-        }
-
-        .query-form .buttons {
-            display: flex;
-            gap: 10px;
-            margin-left: auto;
-        }
-
-        .query-form button {
-            padding: 8px 20px;
-            margin-right: 10px;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        /* 表格样式 */
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            margin: 20px 0;
-            background: white;
-            border-radius: 10px;
+        .data-table-container {
+            margin: 2rem;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
         }
 
-        th {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
             color: white;
-            padding: 15px;
+            padding: 1.2rem 1.5rem;
+            text-align: left;
             font-weight: 500;
         }
 
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
+        .data-table td {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid #e8eaed;
         }
 
-        tr:hover {
-            background-color: #f8f9fa;
+        .data-table tbody tr:hover {
+            background: #f8f9fa;
         }
+
+
+
+        .alert-banner {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            background: var(--danger-color);
+            color: white;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .alert-banner.show {
+            transform: translateX(0);
+        }
+
+        .ship-data-popup {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            z-index: 1000;
+            min-width: 240px;
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(26, 115, 232, 0.1);
+        }
+
+        .ship-data-popup.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ship-data-popup h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+        }
+
+        .ship-data-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        .ship-data-item:last-child {
+            border-bottom: none;
+        }
+
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+
+        /* 查询表单样式 */
+        .query-container {
+            margin: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .query-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.8rem;
+            border: 1px solid #e8eaed;
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        .query-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .query-btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .query-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .query-btn.secondary {
+            background: #e8eaed;
+            color: var(--text-primary);
+        }
+
+        .query-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 分页控件样式 */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 1px solid #e8eaed;
+        }
+
+        .pagination-info {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pagination-button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e8eaed;
+            background: white;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+            background: #f8f9fa;
+            border-color: var(--primary-color);
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .page-size-select {
+            padding: 0.5rem;
+            border: 1px solid #e8eaed;
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            background: white;
+            cursor: pointer;
+        }
+
 
         /* 表格中的操作按钮 */
         .table-action-btn {
@@ -499,92 +752,57 @@
             background: #28a745;
         }
 
-        /* 响应式设计 */
-        @media (max-width: 1200px) {
-            .ship-buttons {
-                width: calc(100% - 200px);
-            }
-        }
-
+        /* 响应式调整 */
         @media (max-width: 768px) {
-            .ship-buttons {
-                width: 100%;
-                margin: 20px 0;
+            .query-form {
+                grid-template-columns: 1fr;
             }
 
-            .query-form .form-row {
+            .query-buttons {
                 flex-direction: column;
-                align-items: stretch;
             }
 
-            .query-form .buttons {
-                margin: 10px 0;
+            .query-btn {
+                width: 100%;
             }
         }
 
-        /* 信息面板样式 */
-        .info-panel {
-            position: fixed;
-            right: 20px;
-            top: 80px;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            max-width: 300px;
-            z-index: 1000;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
+        .navbar-tabs {
+            gap: 1rem;
         }
 
-        .info-panel.show {
-            opacity: 1;
-            transform: translateX(0);
+        .pagination-container {
+            flex-direction: column;
+            gap: 1rem;
         }
 
-        .info-panel h3 {
-            color: #1e3c72;
-            margin-bottom: 10px;
-            font-size: 1.2em;
-        }
-
-        .info-panel p {
-            margin: 5px 0;
-            color: #666;
-        }
-
-        /* 状态样式 */
-        .button-normal {
-            background-color: #28a745;
-        }
-
-        .button-warning {
-            background-color: #ffc107;
-        }
-
-        .button-danger {
-            background-color: #dc3545;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            50% {
-                transform: scale(1.2);
-                opacity: 0.7;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+        .pagination-controls {
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         /* 船闸位置按钮样式 */
+        #sy_piaofuwu {
+            position: absolute;
+            left: 20px;
+            padding: 8px 15px;
+            top: 20px;
+            /* 调整到上方 */
+            z-index: 2;
+            /* 确保在大方框上层 */
+            /* 统一内边距 */
+            width: max-content;
+            /* 宽度适应内容 */
+            min-width: unset;
+            /* 移除最小宽度限制 */
+            white-space: nowrap;
+            /* 文字不换行 */
+            display: inline-flex;
+            /* 使用inline-flex布局 */
+            align-items: center;
+            justify-content: center;
+        }
+
         #sy_duizhong {
             position: absolute;
             top: 200px;
@@ -629,15 +847,14 @@
             writing-mode: vertical-rl;
         }
 
-        #sy_qidian {
-            position: absolute;
-            left: 20px;
-            top: 330px;
-        }
+
 
         #xy_piaofuwu {
             position: absolute;
             right: 20px;
+            top: 20px;
+            /* 调整到上方 */
+            z-index: 2;
         }
 
         #xy_qidian {
@@ -648,45 +865,58 @@
 
         #xy_jingjie {
             position: absolute;
-            right: 270px;
+            right: 200px;
             top: 330px;
         }
 
         #sy_jingjie {
             position: absolute;
             left: 270px;
+            top: 20px;
+            /* 调整到上方 */
+            z-index: 2;
         }
 
         #xyz_xilan {
             position: absolute;
-            right: 500px;
+            right: 400px;
             top: 330px;
+
         }
 
         #xyy_xilan {
             position: absolute;
             right: 500px;
+            top: 20px;
+            /* 调整到上方 */
+            z-index: 2;
         }
 
         #syz_xilan {
             position: absolute;
-            left: 500px;
+            left: 430px;
             top: 330px;
         }
 
         #syy_xilan {
             position: absolute;
             left: 500px;
+            top: 20px;
+            /* 调整到上方 */
+            z-index: 2;
         }
 
         #openDoorSafe_Downstream {
             position: absolute;
-            right: 270px;
+            right: 220px;
+            top: 20px;
+            /* 调整到上方 */
+            z-index: 2;
         }
 
         #openDoorSafe_Upstream {
             position: absolute;
-            left: 270px;
+            left: 200px;
             top: 330px;
         }
 
@@ -695,35 +925,28 @@
             left: 670px;
             top: 330px;
         }
-
-        .bottom-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            gap: 10px;
-            padding: 0 20px;
-        }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <div>船舶运河智慧船闸</div>
-        <div class="tab-buttons">
-            <button class="tab-button active" data-tab="main">主页</button>
-            <button class="tab-button" data-tab="history">详情</button>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-top">
+            <div class="navbar-title">智能船闸监控系统</div>
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="monitor">实时监控</button>
+                <button class="tab-button" data-tab="query">船舶查询</button>
+            </div>
+            <div class="navbar-right">
+                <div class="datetime" id="datetime"></div>
+                <!-- <button class="logout-btn">退出系统</button> -->
+            </div>
         </div>
-        <div id="datetime"></div>
-    </div>
+    </nav>
 
-    <div class="info-panel" id="infoPanel" style="display: none;">
-        <h3>船舶信息</h3>
-        <div id="shipInfo"></div>
-    </div>
-
-    <!-- 主页内容 -->
-    <div class="tab-content active" id="main-tab">
-        <div class="navigation">
+    <!-- 监控页面 -->
+    <div class="tab-content active" id="monitor-tab">
+        <div class="monitor-layout">
             <button class="button" id="sy_piaofuwu">上游漂浮物检测</button>
             <button class="button" id="syy_xilan">上游右-系缆识别</button>
             <button class="button" id="xyy_xilan">下游右-系缆识别</button>
@@ -734,8 +957,9 @@
             <button class="button" id="openDoorSafe_Downstream">下游闸门上方行人检测</button>
             <button class="button" id="sy_jingjie">上游超警戒线检测</button>
 
-            <div class="ship-buttons" id="shipContainer">
-                <!-- 船舶按钮将通过JavaScript动态添加 -->
+            <!-- 中央船闸区域 -->
+            <div class="lock-chamber-container" id="shipContainer">
+                <!-- 船舶将通过JavaScript动态添加 -->
             </div>
 
             <button class="button" id="openDoorSafe_Upstream">上游闸门上方行人检测</button>
@@ -748,80 +972,89 @@
             <button class="button" id="xy_chukong">下游出空检测</button>
         </div>
 
-        <!-- 直接显示表格，移除了查询表单 -->
-        <table id="shipTable">
-            <thead>
-                <tr>
-                    <th>序号</th>
-                    <th>编号</th>
-                    <th>方向点位</th>
-                    <th>时间</th>
-                    <th>船舶号码</th>
-                    <th>状态</th>
-                    <th>详情</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- 表格内容将通过JavaScript动态更新 -->
-            </tbody>
-        </table>
-        <div class="pagination" id="mainPagination"></div>
+        <div class="data-table-container" id="main-tab">
+            <table class="data-table" id="shipTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>编号</th>
+                        <th>方向点位</th>
+                        <th>时间</th>
+                        <th>船舶号码</th>
+                        <th>状态</th>
+                        <th>详情</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 数据将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+            <!-- <div class="pagination" id="mainPagination"></div> -->
+        </div>
     </div>
 
-    <!-- 历史记录tab页 -->
-    <div class="tab-content" id="history-tab" style="display: none;">
-        <div class="query-form">
-            <form id="historyQueryForm">
-                <div class="form-row">
-                    <div class="input-container">
-                        <label for="historyStartTime">开始时间:</label>
-                        <input type="datetime-local" id="historyStartTime" name="startTime">
-                        <label for="historyEndTime">结束时间:</label>
-                        <input type="datetime-local" id="historyEndTime" name="endTime">
-                        <label for="historyMonitorPoint">方向点位:</label>
-                        <select id="historyMonitorPoint" name="monitorPoint">
-                            <option value="201">201</option>
-                            <option value="202">202</option>
-                            <option value="101">101</option>
-                            <option value="102">102</option>
-                        </select>
-                        <label for="historyDirection">上下行:</label>
-                        <select id="historyDirection" name="direction">
-                            <option value="upstream">上行</option>
-                            <option value="downstream">下行</option>
-                        </select>
-                        <label for="historyShipName">船名:</label>
-                        <input type="text" id="historyShipName" name="shipName">
-                    </div>
-                    <div class="button-container">
-                        <button type="submit">查询</button>
-                        <button type="reset">重置</button>
-                    </div>
+    <!-- 查询页面 -->
+    <div class="tab-content" id="query-tab" style="display: none;">
+        <div class="query-container">
+            <form class="query-form" id="queryForm">
+                <div class="form-group">
+                    <label for="shipNumber">船舶编号</label>
+                    <input type="text" id="shipNumber" placeholder="请输入船舶编号">
+                </div>
+                <div class="form-group">
+                    <label for="timeRange">时间范围</label>
+                    <select id="timeRange">
+                        <option value="today">今天</option>
+                        <option value="yesterday">昨天</option>
+                        <option value="week">最近7天</option>
+                        <option value="month">最近30天</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="position">位置</label>
+                    <select id="position">
+                        <option value="">全部</option>
+                        <option value="upstream">上游等待区</option>
+                        <option value="chamber">闸室内</option>
+                        <option value="downstream">下游等待区</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="status">状态</label>
+                    <select id="status">
+                        <option value="">全部</option>
+                        <option value="normal">正常</option>
+                        <option value="warning">警告</option>
+                        <option value="danger">危险</option>
+                    </select>
+                </div>
+                <div class="query-buttons">
+                    <button type="button" class="query-btn secondary" id="resetBtn">重置</button>
+                    <button type="button" class="query-btn primary" id="queryBtn">查询</button>
                 </div>
             </form>
         </div>
 
-        <table id="historyShipTable">
-            <thead>
-                <tr>
-                    <th>序号</th>
-                    <th>编号</th>
-                    <th>方向点位</th>
-                    <th>时间</th>
-                    <th>船舶号码</th>
-                    <th>状态</th>
-                    <th>详情</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- 历史记录表格内容将通过JavaScript动态更新 -->
-            </tbody>
-        </table>
-        <div class="pagination" id="historyPagination"></div>
+        <div class="data-table-container">
+            <table class="data-table" id="queryShipTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>编号</th>
+                        <th>方向点位</th>
+                        <th>时间</th>
+                        <th>船舶号码</th>
+                        <th>状态</th>
+                        <th>详情</th>
+                    </tr>
+                </thead>
+                <tbody id="queryTableBody">
+                    <!-- 查询结果将通过JavaScript动态添加 -->
+                </tbody>
+            </table>
+            <div class="pagination" id="queryPagination"></div>
+        </div>
     </div>
-
-
-
 
     <!-- 模态框 -->
     <div id="detailModal" class="modal">
@@ -838,40 +1071,6 @@
         </div>
     </div>
     <script>
-        // 初始化Socket.IO客户端
-        var socket = io();
-
-        // 从模板中获取初始的 currentPage 和 totalPages
-        var currentPage = 1;
-        var totalPages = 1;
-
-        // Tab切换功能
-        document.addEventListener('DOMContentLoaded', function () {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // 移除所有活动状态
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.style.display = 'none');
-
-                    // 激活当前tab
-                    button.classList.add('active');
-                    const tabId = button.getAttribute('data-tab');
-                    const currentTab = document.getElementById(`${tabId}-tab`);
-                    currentTab.style.display = 'block';
-
-                    // 如果切换到历史记录标签，更新表格数据
-                    if (tabId === 'history') {
-                        updateHistoryTable(1);
-                    }
-                });
-            });
-
-            // 初始化显示主页
-            document.getElementById('main-tab').style.display = 'block';
-        });
 
         // 模拟船舶数据，实际应用中应从服务器获取
         const ships = [
@@ -893,12 +1092,574 @@
                 button.appendChild(statusIndicator);
 
                 container.appendChild(button);
-                setupDragListeners(button);
             });
+        }
+
+        // 基础船舶可视化类
+        class ShipVisualization {
+            constructor(container) {
+                this.container = container;
+                this.ships = new Map();
+            }
+
+            updateShips(shipsData) {
+                this.container.innerHTML = '';
+                shipsData.forEach((ship) => {
+                    const shipElement = this.createShipElement(ship);
+                    const position = this.calculatePosition(ship.position);
+                    shipElement.style.left = position.left;
+                    shipElement.style.top = position.top;
+                    this.container.appendChild(shipElement);
+                    this.updateTableData(shipsData);
+                });
+            }
+
+            createShipElement(shipData) {
+                const ship = document.createElement('div');
+                ship.className = 'ship';
+                ship.textContent = shipData.number;
+                return ship;
+            }
+
+            calculatePosition(position) {
+                if (position.includes('上游')) {
+                    return { left: '20%', top: '30%' };
+                } else if (position.includes('下游')) {
+                    return { left: '70%', top: '30%' };
+                }
+                return { left: '45%', top: '40%' };
+            }
+
+            updateTableData(shipsData) {
+                const tableBody = document.getElementById('shipTableBody');
+                tableBody.innerHTML = '';
+
+                shipsData.forEach(ship => {
+                    const row = document.createElement('tr');
+                    const time = new Date().toLocaleTimeString('zh-CN');
+
+                    row.innerHTML = `
+                        <td>${ship.number}</td>
+                        <td>${ship.position}</td>
+                        <td>${ship.length}</td>
+                        <td>${ship.width}</td>
+                        <td>${ship.draft}</td>
+                        <td><span class="status-tag status-normal">正常</span></td>
+                        <td>${time}</td>
+                    `;
+
+                    tableBody.appendChild(row);
+                });
+            }
         }
 
 
 
+        // 增强版船舶可视化类
+        class EnhancedShipVisualization extends ShipVisualization {
+            createShipElement(shipData) {
+                const ship = super.createShipElement(shipData);
+
+                ship.addEventListener('click', () => {
+                    this.showShipDetails(shipData, ship);
+                });
+
+                return ship;
+            }
+
+            showShipDetails(shipData, shipElement) {
+                const existingPopup = document.querySelector('.ship-data-popup');
+                if (existingPopup) {
+                    existingPopup.remove();
+                }
+
+                const popup = document.createElement('div');
+                popup.className = 'ship-data-popup';
+
+                popup.innerHTML = `
+                    <h3>船舶详情</h3>
+                    <div class="ship-data-item">
+                        <span>编号：</span>
+                        <span>${shipData.number}</span>
+                    </div>
+                    <div class="ship-data-item">
+                        <span>位置：</span>
+                        <span>${shipData.position}</span>
+                    </div>
+                    <div class="ship-data-item">
+                        <span>尺寸：</span>
+                        <span>${shipData.length}m × ${shipData.width}m</span>
+                    </div>
+                    <div class="ship-data-item">
+                        <span>吃水：</span>
+                        <span>${shipData.draft}m</span>
+                    </div>
+                `;
+
+                const rect = shipElement.getBoundingClientRect();
+                popup.style.left = `${rect.left}px`;
+                popup.style.top = `${rect.bottom + 10}px`;
+
+                document.body.appendChild(popup);
+                popup.classList.add('show');
+
+                const closePopup = (e) => {
+                    if (!popup.contains(e.target) && e.target !== shipElement) {
+                        popup.remove();
+                        document.removeEventListener('click', closePopup);
+                    }
+                };
+
+                setTimeout(() => {
+                    document.addEventListener('click', closePopup);
+                }, 0);
+            }
+        }
+
+        // 初始化系统
+        const shipVisualization = new EnhancedShipVisualization(
+            document.getElementById('lockChamber')
+        );
+
+        // 更新时间显示
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('datetime').textContent = now.toLocaleString('zh-CN');
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // 按钮状态切换
+        // document.querySelectorAll('.button').forEach(btn => {
+        //     btn.addEventListener('click', function () {
+        //         const states = ['', 'warning', 'danger'];
+        //         const currentState = this.className.includes('warning') ? 'warning' :
+        //             this.className.includes('danger') ? 'danger' : '';
+        //         const currentIndex = states.indexOf(currentState);
+        //         const nextState = states[(currentIndex + 1) % 3];
+
+        //         this.className = 'button ' + nextState;
+
+        //         // 添加波纹效果
+        //         const ripple = document.createElement('div');
+        //         ripple.className = 'ripple';
+        //         this.appendChild(ripple);
+        //         setTimeout(() => ripple.remove(), 1000);
+
+        //         // 如果状态为警告或危险，触发告警
+        //         if (nextState) {
+        //             lockChamberMonitor.showAlert(`${this.textContent}：${nextState === 'warning' ? '警告' : '危险'}`);
+        //         }
+        //     });
+        // });
+
+
+
+        // 修改tab切换事件，添加表格数据加载
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // 移除所有活动状态
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.style.display = 'none');
+
+                    // 激活当前tab
+                    button.classList.add('active');
+                    const tabId = button.getAttribute('data-tab');
+                    const currentTab = document.getElementById(`${tabId}-tab`);
+                    currentTab.style.display = 'block';
+
+                    // 如果切换到历史记录标签，更新表格数据
+                    if (tabId === 'query') {
+                        updateQueryTable(1);
+                    }
+                });
+            });
+        });
+
+        // 添加分页按钮
+        const paginationContainer = document.createElement('div');
+        paginationContainer.className = 'pagination';
+        document.body.appendChild(paginationContainer);
+
+        function addPaginationButtons(totalPages, currentPage) {
+            const paginationContainer = document.getElementById('mainPagination');
+            paginationContainer.innerHTML = '';
+
+            // 第一页/共多少页
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+            paginationContainer.appendChild(pageInfo);
+
+            // 首页按钮
+            const firstButton = document.createElement('button');
+            firstButton.textContent = '首页 ';
+            firstButton.disabled = currentPage === 1;
+            firstButton.addEventListener('click', () => {
+                if (currentPage !== 1) {
+                    currentPage = 1;
+                    updateTable(currentPage);
+                    addPaginationButtons(totalPages, currentPage);
+                }
+            });
+
+            paginationContainer.appendChild(firstButton);
+
+            // 上一页按钮
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '上一页 ';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updateTable(currentPage);
+                    addPaginationButtons(totalPages, currentPage);
+                }
+            });
+            paginationContainer.appendChild(prevButton);
+
+            // 下一页按钮
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '下一页 ';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updateTable(currentPage);
+                    addPaginationButtons(totalPages, currentPage);
+                }
+            });
+            paginationContainer.appendChild(nextButton);
+
+            // 尾页按钮
+            const lastButton = document.createElement('button');
+            lastButton.textContent = '尾页 ';
+            lastButton.disabled = currentPage === totalPages;
+            lastButton.addEventListener('click', () => {
+                if (currentPage !== totalPages) {
+                    currentPage = totalPages;
+                    updateTable(currentPage);
+                    addPaginationButtons(totalPages, currentPage);
+                }
+            });
+            paginationContainer.appendChild(lastButton);
+
+            // 跳转输入框
+            const gotoInput = document.createElement('input');
+            gotoInput.type = 'number';
+            gotoInput.min = 1;
+            gotoInput.max = totalPages;
+            gotoInput.value = currentPage;
+            gotoInput.addEventListener('change', () => {
+                const pageNumber = parseInt(gotoInput.value, 10);
+                if (pageNumber >= 1 && pageNumber <= totalPages) {
+                    currentPage = pageNumber;
+                    updateTable(currentPage);
+                    addPaginationButtons(totalPages, currentPage);
+                }
+            });
+            paginationContainer.appendChild(gotoInput);
+
+            // 跳转按钮
+            const gotoButton = document.createElement('button');
+            gotoButton.textContent = '跳转 ';
+            gotoButton.addEventListener('click', () => {
+                const pageNumber = parseInt(gotoInput.value, 10);
+                if (pageNumber >= 1 && pageNumber <= totalPages) {
+                    currentPage = pageNumber;
+                    updateTable(currentPage);
+                    addPaginationButtons(totalPages, currentPage);
+                }
+            });
+            paginationContainer.appendChild(gotoButton);
+        }
+
+
+
+        // 查询页函数
+        function updateQueryTable(currentPage) {
+            fetch('/get_history_data?currentPage=' + currentPage)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !Array.isArray(data.data)) {
+                        console.error('Invalid data format:', data);
+                        return;
+                    }
+                    const tbody = document.querySelector('#queryShipTable tbody');
+                    tbody.innerHTML = '';
+                    data.data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        const fields = ['id', 'name', 'direction', 'create_time', 'ship_number', 'status'];
+                        fields.forEach(fieldName => {
+                            const td = document.createElement('td');
+                            td.textContent = row[fieldName] || '';
+                            tr.appendChild(td);
+                        });
+
+                        const detailTd = document.createElement('td');
+                        const detailLink = document.createElement('button');
+                        detailLink.textContent = '详情';
+                        detailLink.dataset.id = row.id;
+                        detailLink.addEventListener('click', () => openDetailModal(detailLink.dataset.id));
+                        detailTd.appendChild(detailLink);
+                        tr.appendChild(detailTd);
+                        tbody.appendChild(tr);
+                    });
+                    updateQueryPagination(data.total_pages, currentPage);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // 更新Tab分页控件
+        function updateQueryPagination(totalPages, currentPage) {
+            const paginationContainer = document.getElementById('queryPagination');
+            paginationContainer.innerHTML = '';
+
+            // 页码信息
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+            paginationContainer.appendChild(pageInfo);
+
+            // 首页按钮
+            const firstButton = document.createElement('button');
+            firstButton.textContent = '首页';
+            firstButton.disabled = currentPage === 1;
+            firstButton.addEventListener('click', () => {
+                if (currentPage !== 1) {
+                    updateQueryTable(1);
+                }
+            });
+            paginationContainer.appendChild(firstButton);
+
+            // 上一页按钮
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '上一页';
+            prevButton.disabled = currentPage === 1;
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    updateQueryTable(currentPage - 1);
+                }
+            });
+            paginationContainer.appendChild(prevButton);
+
+            // 下一页按钮
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '下一页';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    updateQueryTable(currentPage + 1);
+                }
+            });
+            paginationContainer.appendChild(nextButton);
+
+            // 尾页按钮
+            const lastButton = document.createElement('button');
+            lastButton.textContent = '尾页';
+            lastButton.disabled = currentPage === totalPages;
+            lastButton.addEventListener('click', () => {
+                if (currentPage !== totalPages) {
+                    updateQueryTable(totalPages);
+                }
+            });
+            paginationContainer.appendChild(lastButton);
+
+            // 跳转输入框
+            const gotoInput = document.createElement('input');
+            gotoInput.type = 'number';
+            gotoInput.min = 1;
+            gotoInput.max = totalPages;
+            gotoInput.value = currentPage;
+            paginationContainer.appendChild(gotoInput);
+
+            // 跳转按钮
+            const gotoButton = document.createElement('button');
+            gotoButton.textContent = '跳转';
+            gotoButton.addEventListener('click', () => {
+                const pageNumber = parseInt(gotoInput.value, 10);
+                if (pageNumber >= 1 && pageNumber <= totalPages) {
+                    updateQueryTable(pageNumber);
+                }
+            });
+            paginationContainer.appendChild(gotoButton);
+        }
+
+        // 修改tab切换事件，添加历史记录数据加载
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // 移除所有活动状态
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.style.display = 'none');
+
+                    // 激活当前tab
+                    button.classList.add('active');
+                    const tabId = button.getAttribute('data-tab');
+                    const currentTab = document.getElementById(`${tabId}-tab`);
+                    currentTab.style.display = 'block';
+
+                    // 如果切换到历史记录标签，更新表格数据
+                    if (tabId === 'query') {
+                        updateQueryTable(1);
+                    }
+                });
+            });
+        });
+
+        var currentPage = 1;
+        var totalPages = 1;
+
+        function updateTable(currentPage) {
+            currentPage = currentPage || 1;
+            fetch('/get_data?currentPage=' + currentPage)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !Array.isArray(data.data)) {
+                        console.error('Invalid data format:', data);
+                        return;
+                    }
+
+                    totalPages = data.total_pages;
+                    const tbody = document.querySelector('#shipTable tbody');
+                    tbody.innerHTML = '';
+                    data.data.forEach((row, index) => {
+                        const tr = document.createElement('tr');
+                        const fields = ['id', 'name', 'direction', 'create_time', 'ship_number', 'status'];
+                        fields.forEach(fieldName => {
+                            const td = document.createElement('td');
+                            td.textContent = row[fieldName] || ''; // 使用 || '' 处理可能不存在的字段
+                            tr.appendChild(td);
+                        });
+
+                        // 添加最后一列“打开详情”
+                        const detailTd = document.createElement('td');
+                        const detailLink = document.createElement('button');
+                        detailLink.textContent = '详情';
+                        detailLink.dataset.id = row.id; // 保存单元格序号到数据属性
+                        detailLink.addEventListener('click', () => openDetailModal(detailLink.dataset.id));
+                        detailTd.appendChild(detailLink);
+                        tr.appendChild(detailTd);
+                        tbody.appendChild(tr);
+                    });
+                    addPaginationButtons(totalPages, currentPage);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+
+        function openDetailModal(id) {
+            fetch(`/get_images?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const modal = document.getElementById('detailModal');
+                    const swiperWrapper = modal.querySelector('.swiper-wrapper');
+                    swiperWrapper.innerHTML = ''; // 清空现有内容
+
+                    // 添加图片到轮播
+                    data.images.forEach(imageUrl => {
+                        const slide = document.createElement('div');
+                        slide.className = 'swiper-slide';
+
+                        const img = document.createElement('img');
+                        img.src = '/static/images/Snipaste_2024-12-06_14-55-18.png';
+                        img.style.maxWidth = '100%';
+                        img.style.height = 'auto';
+
+                        slide.appendChild(img);
+                        swiperWrapper.appendChild(slide);
+                    });
+
+                    // 初始化Swiper
+                    if (window.mySwiper) {
+                        window.mySwiper.destroy(true, true);
+                    }
+
+                    window.mySwiper = new Swiper('.swiper-container', {
+                        loop: true,
+                        navigation: {
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev',
+                        },
+                        pagination: {
+                            el: '.swiper-pagination',
+                            clickable: true,
+                        },
+                    });
+
+                    modal.style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('detailModal');
+            if (window.mySwiper) {
+                window.mySwiper.destroy(true, true);
+            }
+            modal.style.display = 'none';
+        }
+
+        // 确保事件监听器正确设置
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('detailModal');
+            const closeButton = document.querySelector('.close-button');
+
+            closeButton.onclick = closeModal;
+
+            window.onclick = function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            }
+        });
+
+        // 修改历史记录查询表单提交事件
+        document.getElementById('queryBtn').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const formData = {
+                startTime: document.getElementById('queryStartTime').value,
+                endTime: document.getElementById('queryEndTime').value,
+                monitorPoint: document.getElementById('queryMonitorPoint').value,
+                direction: document.getElementById('queryDirection').value,
+                shipName: document.getElementById('queryShipName').value
+            };
+
+            // 发送查询请求并更新表格
+            fetch('/query_Ship', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    updateQueryTable(1); // 查询后显示第一页
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+
+        function queryQueryData(formData) {
+            fetch('/query_history', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    updateQueryTable(1);
+                })
+                .catch(error => console.error('Error:', error));
+        }
         // 下游出空检测
         function createxychukong() {
             setInterval(() => {
@@ -914,7 +1675,6 @@
                     .catch(error => console.error('Error:', error));
             }, 5000);
         }
-
         // 上游出空检测
         function createsychukong() {
             setInterval(() => {
@@ -946,7 +1706,6 @@
                     .catch(error => console.error('Error:', error));
             }, 5000);
         }
-
         // 上游人员检测
         function createOpenDoorSafeUpButtons() {
             setInterval(() => {
@@ -1131,498 +1890,6 @@
             }, 5000);
         }
 
-        // 更新时间显示
-        function updateDateTime() {
-            const now = new Date();
-            const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-            const formatted = `${now.getFullYear()}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getDate().toString().padStart(2, '0')} ${days[now.getDay()]} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            document.getElementById('datetime').textContent = formatted;
-        }
-
-        // 设置拖拽监听器
-        function setupDragListeners(button) {
-            let isDragging = false;
-            let currentX;
-            let currentY;
-            let initialX;
-            let initialY;
-            let xOffset = 0;
-            let yOffset = 0;
-
-            button.addEventListener('mousedown', dragStart);
-            button.addEventListener('mousemove', drag);
-            button.addEventListener('mouseup', dragEnd);
-            button.addEventListener('mouseleave', dragEnd);
-
-            function dragStart(e) {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
-
-                if (e.target === button) {
-                    isDragging = true;
-                    button.classList.add('dragging');
-                }
-            }
-
-            function drag(e) {
-                if (isDragging) {
-                    e.preventDefault();
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-
-                    xOffset = currentX;
-                    yOffset = currentY;
-
-                    const container = document.getElementById('shipContainer');
-                    const containerRect = container.getBoundingClientRect();
-
-                    const buttonRect = button.getBoundingClientRect();
-                    const maxX = containerRect.width - buttonRect.width;
-                    const maxY = containerRect.height - buttonRect.height;
-
-                    currentX = Math.max(0, Math.min(currentX, maxX));
-                    currentY = Math.max(0, Math.min(currentY, maxY));
-
-                    button.style.left = currentX + 'px';
-                    button.style.top = currentY + 'px';
-
-                    // 发送位置更新到服务器
-                    socket.emit('position_update', {
-                        ship_name: button.textContent,
-                        position: { x: currentX, y: currentY }
-                    });
-                }
-            }
-
-            function dragEnd() {
-                initialX = currentX;
-                initialY = currentY;
-                isDragging = false;
-                button.classList.remove('dragging');
-            }
-        }
-
-        // 处理接收到的船舶更新数据
-        socket.on('update_ship', function (data) {
-            const button = Array.from(document.getElementsByClassName('ship-button')).find(btn => btn.textContent === data.ship_name);
-
-            if (button) {
-                // 更新位置
-                if (data.position) {
-                    button.style.left = data.position.x + 'px';
-                    button.style.top = data.position.y + 'px';
-                }
-
-                // 更新状态指示器
-                const indicator = button.querySelector('.status-indicator');
-                if (indicator) {
-                    indicator.className = 'status-indicator status-' + data.status.toLowerCase();
-                }
-
-                // 更新信息面板
-                updateInfoPanel(data);
-
-                // 更新表格
-                // updateTable(data);
-                updateTable(1);
-            }
-        });
-
-        // 更新信息面板
-        function updateInfoPanel(data) {
-            const panel = document.getElementById('infoPanel');
-            const info = document.getElementById('shipInfo');
-
-            info.innerHTML = `
-                <p>船名: ${data.ship_name}</p>
-                <p>状态: ${data.status}</p>
-                <p>更新时间: ${data.timestamp}</p>
-            `;
-
-            panel.style.display = 'block';
-            setTimeout(() => panel.style.display = 'none', 3000);
-        }
-
-        function updateTable(currentPage) {
-            currentPage = currentPage || 1;
-            fetch('/get_data?currentPage=' + currentPage)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data || !Array.isArray(data.data)) {
-                        console.error('Invalid data format:', data);
-                        return;
-                    }
-
-                    totalPages = data.total_pages;
-                    const tbody = document.querySelector('#shipTable tbody');
-                    tbody.innerHTML = '';
-                    data.data.forEach((row, index) => {
-                        const tr = document.createElement('tr');
-                        const fields = ['id', 'name', 'direction', 'create_time', 'ship_number', 'status'];
-                        fields.forEach(fieldName => {
-                            const td = document.createElement('td');
-                            td.textContent = row[fieldName] || ''; // 使用 || '' 处理可能不存在的字段
-                            tr.appendChild(td);
-                        });
-
-                        // 添加最后一列“打开详情”
-                        const detailTd = document.createElement('td');
-                        const detailLink = document.createElement('button');
-                        detailLink.textContent = '详情';
-                        detailLink.dataset.id = row.id; // 保存单元格序号到数据属性
-                        detailLink.addEventListener('click', () => openDetailModal(detailLink.dataset.id));
-                        detailTd.appendChild(detailLink);
-                        tr.appendChild(detailTd);
-                        tbody.appendChild(tr);
-                    });
-                    addPaginationButtons(totalPages, currentPage);
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
-
-        // 显示详情
-        function showDetails(shipName) {
-            alert(`显示 ${shipName} 的详细信息`);
-        }
-
-        let originalImages = [];
-        function openDetailModal(id) {
-            fetch(`/get_images?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    const modal = document.getElementById('detailModal');
-                    const swiperWrapper = modal.querySelector('.swiper-wrapper');
-                    swiperWrapper.innerHTML = ''; // 清空现有内容
-
-                    // 添加图片到轮播
-                    data.images.forEach(imageUrl => {
-                        const slide = document.createElement('div');
-                        slide.className = 'swiper-slide';
-
-                        const img = document.createElement('img');
-                        img.src = '/static/images/Snipaste_2024-12-06_14-55-18.png';
-                        img.style.maxWidth = '100%';
-                        img.style.height = 'auto';
-
-                        slide.appendChild(img);
-                        swiperWrapper.appendChild(slide);
-                    });
-
-                    // 初始化Swiper
-                    if (window.mySwiper) {
-                        window.mySwiper.destroy(true, true);
-                    }
-
-                    window.mySwiper = new Swiper('.swiper-container', {
-                        loop: true,
-                        navigation: {
-                            nextEl: '.swiper-button-next',
-                            prevEl: '.swiper-button-prev',
-                        },
-                        pagination: {
-                            el: '.swiper-pagination',
-                            clickable: true,
-                        },
-                    });
-
-                    modal.style.display = 'block';
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('detailModal');
-            if (window.mySwiper) {
-                window.mySwiper.destroy(true, true);
-            }
-            modal.style.display = 'none';
-        }
-
-        // 确保事件监听器正确设置
-        document.addEventListener('DOMContentLoaded', function () {
-            const modal = document.getElementById('detailModal');
-            const closeButton = document.querySelector('.close-button');
-
-            closeButton.onclick = closeModal;
-
-            window.onclick = function (event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            }
-        });
-
-        // 添加分页按钮
-        const paginationContainer = document.createElement('div');
-        paginationContainer.className = 'pagination';
-        document.body.appendChild(paginationContainer);
-
-        function addPaginationButtons(totalPages, currentPage) {
-            const paginationContainer = document.getElementById('mainPagination');
-            paginationContainer.innerHTML = '';
-
-            // 第一页/共多少页
-            const pageInfo = document.createElement('span');
-            pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
-            paginationContainer.appendChild(pageInfo);
-
-            // 首页按钮
-            const firstButton = document.createElement('button');
-            firstButton.textContent = '首页 ';
-            firstButton.disabled = currentPage === 1;
-            firstButton.addEventListener('click', () => {
-                if (currentPage !== 1) {
-                    currentPage = 1;
-                    updateTable(currentPage);
-                    addPaginationButtons(totalPages, currentPage);
-                }
-            });
-
-            paginationContainer.appendChild(firstButton);
-
-            // 上一页按钮
-            const prevButton = document.createElement('button');
-            prevButton.textContent = '上一页 ';
-            prevButton.disabled = currentPage === 1;
-            prevButton.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    updateTable(currentPage);
-                    addPaginationButtons(totalPages, currentPage);
-                }
-            });
-            paginationContainer.appendChild(prevButton);
-
-            // 下一页按钮
-            const nextButton = document.createElement('button');
-            nextButton.textContent = '下一页 ';
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    updateTable(currentPage);
-                    addPaginationButtons(totalPages, currentPage);
-                }
-            });
-            paginationContainer.appendChild(nextButton);
-
-            // 尾页按钮
-            const lastButton = document.createElement('button');
-            lastButton.textContent = '尾页 ';
-            lastButton.disabled = currentPage === totalPages;
-            lastButton.addEventListener('click', () => {
-                if (currentPage !== totalPages) {
-                    currentPage = totalPages;
-                    updateTable(currentPage);
-                    addPaginationButtons(totalPages, currentPage);
-                }
-            });
-            paginationContainer.appendChild(lastButton);
-
-            // 跳转输入框
-            const gotoInput = document.createElement('input');
-            gotoInput.type = 'number';
-            gotoInput.min = 1;
-            gotoInput.max = totalPages;
-            gotoInput.value = currentPage;
-            gotoInput.addEventListener('change', () => {
-                const pageNumber = parseInt(gotoInput.value, 10);
-                if (pageNumber >= 1 && pageNumber <= totalPages) {
-                    currentPage = pageNumber;
-                    updateTable(currentPage);
-                    addPaginationButtons(totalPages, currentPage);
-                }
-            });
-            paginationContainer.appendChild(gotoInput);
-
-            // 跳转按钮
-            const gotoButton = document.createElement('button');
-            gotoButton.textContent = '跳转 ';
-            gotoButton.addEventListener('click', () => {
-                const pageNumber = parseInt(gotoInput.value, 10);
-                if (pageNumber >= 1 && pageNumber <= totalPages) {
-                    currentPage = pageNumber;
-                    updateTable(currentPage);
-                    addPaginationButtons(totalPages, currentPage);
-                }
-            });
-            paginationContainer.appendChild(gotoButton);
-        }
-
-
-
-        // 新增历史记录相关函数
-        function updateHistoryTable(currentPage) {
-            fetch('/get_history_data?currentPage=' + currentPage)
-                .then(response => response.json())
-                .then(data => {
-                    if (!data || !Array.isArray(data.data)) {
-                        console.error('Invalid data format:', data);
-                        return;
-                    }
-                    const tbody = document.querySelector('#historyShipTable tbody');
-                    tbody.innerHTML = '';
-                    data.data.forEach(row => {
-                        const tr = document.createElement('tr');
-                        const fields = ['id', 'name', 'direction', 'create_time', 'ship_number', 'status'];
-                        fields.forEach(fieldName => {
-                            const td = document.createElement('td');
-                            td.textContent = row[fieldName] || '';
-                            tr.appendChild(td);
-                        });
-
-                        const detailTd = document.createElement('td');
-                        const detailLink = document.createElement('button');
-                        detailLink.textContent = '详情';
-                        detailLink.dataset.id = row.id;
-                        detailLink.addEventListener('click', () => openDetailModal(detailLink.dataset.id));
-                        detailTd.appendChild(detailLink);
-                        tr.appendChild(detailTd);
-                        tbody.appendChild(tr);
-                    });
-                    updateHistoryPagination(data.total_pages, currentPage);
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        // 更新历史记录分页控件
-        function updateHistoryPagination(totalPages, currentPage) {
-            const paginationContainer = document.getElementById('historyPagination');
-            paginationContainer.innerHTML = '';
-
-            // 页码信息
-            const pageInfo = document.createElement('span');
-            pageInfo.textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
-            paginationContainer.appendChild(pageInfo);
-
-            // 首页按钮
-            const firstButton = document.createElement('button');
-            firstButton.textContent = '首页';
-            firstButton.disabled = currentPage === 1;
-            firstButton.addEventListener('click', () => {
-                if (currentPage !== 1) {
-                    updateHistoryTable(1);
-                }
-            });
-            paginationContainer.appendChild(firstButton);
-
-            // 上一页按钮
-            const prevButton = document.createElement('button');
-            prevButton.textContent = '上一页';
-            prevButton.disabled = currentPage === 1;
-            prevButton.addEventListener('click', () => {
-                if (currentPage > 1) {
-                    updateHistoryTable(currentPage - 1);
-                }
-            });
-            paginationContainer.appendChild(prevButton);
-
-            // 下一页按钮
-            const nextButton = document.createElement('button');
-            nextButton.textContent = '下一页';
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    updateHistoryTable(currentPage + 1);
-                }
-            });
-            paginationContainer.appendChild(nextButton);
-
-            // 尾页按钮
-            const lastButton = document.createElement('button');
-            lastButton.textContent = '尾页';
-            lastButton.disabled = currentPage === totalPages;
-            lastButton.addEventListener('click', () => {
-                if (currentPage !== totalPages) {
-                    updateHistoryTable(totalPages);
-                }
-            });
-            paginationContainer.appendChild(lastButton);
-
-            // 跳转输入框
-            const gotoInput = document.createElement('input');
-            gotoInput.type = 'number';
-            gotoInput.min = 1;
-            gotoInput.max = totalPages;
-            gotoInput.value = currentPage;
-            paginationContainer.appendChild(gotoInput);
-
-            // 跳转按钮
-            const gotoButton = document.createElement('button');
-            gotoButton.textContent = '跳转';
-            gotoButton.addEventListener('click', () => {
-                const pageNumber = parseInt(gotoInput.value, 10);
-                if (pageNumber >= 1 && pageNumber <= totalPages) {
-                    updateHistoryTable(pageNumber);
-                }
-            });
-            paginationContainer.appendChild(gotoButton);
-        }
-
-        // 修改tab切换事件，添加历史记录数据加载
-        document.addEventListener('DOMContentLoaded', function () {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // 移除所有活动状态
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.style.display = 'none');
-
-                    // 激活当前tab
-                    button.classList.add('active');
-                    const tabId = button.getAttribute('data-tab');
-                    const currentTab = document.getElementById(`${tabId}-tab`);
-                    currentTab.style.display = 'block';
-
-                    // 如果切换到历史记录标签，更新表格数据
-                    if (tabId === 'history') {
-                        updateHistoryTable(1);
-                    }
-                });
-            });
-        });
-        // 修改历史记录查询表单提交事件
-        document.getElementById('historyQueryForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-            const formData = {
-                startTime: document.getElementById('historyStartTime').value,
-                endTime: document.getElementById('historyEndTime').value,
-                monitorPoint: document.getElementById('historyMonitorPoint').value,
-                direction: document.getElementById('historyDirection').value,
-                shipName: document.getElementById('historyShipName').value
-            };
-
-            // 发送查询请求并更新表格
-            fetch('/query_history', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    updateHistoryTable(1); // 查询后显示第一页
-                })
-                .catch(error => console.error('Error:', error));
-        });
-
-        function queryHistoryData(formData) {
-            fetch('/query_history', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    updateHistoryTable(1);
-                })
-                .catch(error => console.error('Error:', error));
-        }
 
         // 确保所有初始化函数在页面加载完成后执行
         createShipButtons();
@@ -1658,6 +1925,9 @@
                 closeModal();
             }
         };
+
+
+
 
     </script>
     <script src="{{ url_for('static', filename='js/swiper-bundle.min.js') }}"></script>
