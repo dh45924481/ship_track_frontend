@@ -30,9 +30,9 @@ def connect_to_database():
     connection = pymysql.connect(
         host="47.116.5.151",
         user="root",
-        password="123456",
+        password="hasf12345",
         database="jiance",
-        port=13308,
+        port=13306,
         cursorclass=pymysql.cursors.DictCursor,
         # charset='utf8mb4',
     )
