@@ -17,6 +17,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 @main.route('/index',methods=['GET','POST'])
+@login_required
 def index():
     return render_template('index.html')
 
