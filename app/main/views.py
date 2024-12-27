@@ -28,11 +28,11 @@ def page_not_found(e):
 def connect_to_database():
     # 连接数据库
     connection = pymysql.connect(
-        host="47.116.5.151",
+        host="139.196.173.89",
         user="root",
         password="hasf12345",
         database="jiance",
-        port=13306,
+        port=3306,
         cursorclass=pymysql.cursors.DictCursor,
         # charset='utf8mb4',
     )
