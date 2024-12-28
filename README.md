@@ -1,12 +1,15 @@
-conda create -n flask
+
+conda create -n flask python=3.10
 
 conda activate flask
 
-pip install Flask-Migrate==4.0.7
+pip install Flask-Migrate==4.0.7 -i https://mirrors.aliyun.com/pypi/simple/
 
-pip install mysql-connector-python==9.1.0
+pip install mysql-connector-python==9.1.0  -i https://mirrors.aliyun.com/pypi/simple/
 
-pip install Flask-Login==0.6.3
+pip install Flask-Login==0.6.3  -i https://mirrors.aliyun.com/pypi/simple/
+
+pip install pymysql -i https://mirrors.aliyun.com/pypi/simple/
 
 flask run 启动程序
 

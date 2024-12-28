@@ -1,5 +1,6 @@
 # coding=utf-8
 from flask import Flask, request, redirect, session,url_for,render_template,flash,jsonify
+from datetime import datetime, timedelta
 from app import app
 import pymysql
 import time
@@ -29,11 +30,11 @@ def page_not_found(e):
 def connect_to_database():
     # 连接数据库
     connection = pymysql.connect(
-        host="139.196.173.89",
+        host="47.116.5.151",
         user="root",
         password="hasf12345",
         database="jiance",
-        port=3306,
+        port=13316,
         cursorclass=pymysql.cursors.DictCursor,
         # charset='utf8mb4',
     )
@@ -44,14 +45,18 @@ def get_history_data():
     try:
         currentPage = int(request.args.get("currentPage", 1))
         per_page = 10
+        # 创建数据库连接
         connection = connect_to_database()
+        # 获取最新数据
         data, total_count = get_latest_data(connection, currentPage, per_page)
-        total_pages = (total_count + per_page - 1) // per_page
+        total_pages = (total_count + per_page - 1) // per_page  # 计算总页数
         return jsonify({"data": data, "total_pages": total_pages})
     except Exception as e:
+        # 返回错误信息
         return jsonify({"error": str(e)}), 500
     finally:
-        if connection:
+        # 确保无论是否发生异常，都关闭数据库连接
+        if "connection" in locals() and connection is not None:
             connection.close()
 
 @main.route("/query_history", methods=["POST"])
@@ -68,6 +73,115 @@ def query_history():
             connection.close()
 
 
+
+def get_date_range(time_range):
+    """根据时间范围参数计算日期范围的辅助函数"""
+    now = datetime.now()
+    end_date = now
+
+    if time_range == 'today':
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif time_range == 'yesterday':
+        start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif time_range == 'week':
+        start_date = now - timedelta(days=7)
+    elif time_range == 'month':
+        start_date = now - timedelta(days=30)
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    return start_date, end_date
+
+
+@app.route('/query', methods=['GET'])
+def query():
+    try:
+        # 获取查询参数
+        ship_number = request.args.get('shipNumber', '')
+        time_range = request.args.get('timeRange', 'today')
+        position = request.args.get('position', '')
+        page = int(request.args.get('page', 1))
+        per_page = 10  # 每页显示数量
+
+        # 计算分页偏移量
+        offset = (page - 1) * per_page
+
+        # 获取日期范围
+        start_date, end_date = get_date_range(time_range)
+
+        # 构建基础查询语句
+        query = """
+            SELECT id,direction,name,create_time
+            FROM tbl_boat_result_114
+            WHERE create_time BETWEEN %s AND %s
+        """
+        params = [start_date, end_date]
+
+        # 添加船舶编号查询条件
+        if ship_number:
+            query += " AND id LIKE %s"
+            params.append(f"%{ship_number}%")
+
+        # if position:
+        #     query += " AND position = :position"
+        #     params.append({'position': position})
+
+        # 获取总记录数的查询
+        count_query = """
+            SELECT COUNT(*) as total
+            FROM tbl_boat_result_114
+            WHERE create_time BETWEEN %s AND %s
+        """
+        count_params = [start_date, end_date]
+
+        if ship_number:
+            count_query += " AND id LIKE %s"
+            count_params.append(f"%{ship_number}%")
+
+        # 添加排序和分页
+        query += " ORDER BY create_time DESC LIMIT %s OFFSET %s"
+        params.extend([per_page, offset])
+
+        # 执行查询
+        connection = connect_to_database()
+        try:
+            with connection.cursor() as cursor:
+                # 执行总数查询
+                cursor.execute(count_query, count_params)
+                total_count = cursor.fetchone()['total']
+
+                # 执行主查询
+                cursor.execute(query, params)
+                results = cursor.fetchall()
+
+                # 计算总页数
+                total_pages = (total_count + per_page - 1) // per_page
+
+                # 格式化日期时间
+                for row in results:
+                    if isinstance(row['create_time'], datetime):
+                        row['create_time'] = row['create_time'].strftime('%Y-%m-%d %H:%M:%S')
+
+                return jsonify({
+                    'data': results,
+                    'total_pages': total_pages,
+                    'current_page': page,
+                    'total_count': total_count
+                })
+
+        finally:
+            connection.close()
+
+    except Exception as e:
+        app.logger.error(f"查询错误: {str(e)}")
+        return jsonify({
+            'error': '查询失败',
+            'message': str(e)
+        }), 500
+
+
+
 @main.route("/get_images", methods=["GET"])
 def get_images():
     id = request.args.get("id")
@@ -79,7 +193,12 @@ def get_images():
             result = cursor.fetchone()
 
         if result:
-            images = [result[col] for col in ["pic1", "pic2", "pic3"] if result[col]]
+            images = []
+            for col in ["pic1", "pic2", "pic3"]:
+                if result[col]:
+                    # 构建静态文件URL
+                    image_url = url_for('static', filename=f'images/{result[col]}')
+                    images.append(image_url)
             return jsonify({"images": images})
         else:
             return jsonify({"images": []}), 404

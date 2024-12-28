@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
 app = Flask(__name__,static_folder='main/static',static_url_path='/static')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:123456@127.0.0.1:3306/test?charset=utf8'  # 根据你的配置调整
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:123456@47.116.5.151:13316/test?charset=utf8'  # 根据你的配置调整
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config.from_object('config')
 db = SQLAlchemy(app)

@@ -1809,7 +1809,7 @@
                         slide.className = 'swiper-slide';
 
                         const img = document.createElement('img');
-                        img.src = '/static/images/Snipaste_2024-12-06_14-55-18.png';
+                        img.src = imageUrl;
                         img.style.maxWidth = '100%';
                         img.style.height = 'auto';
 
@@ -1861,7 +1861,7 @@
             }
         });
 
-        // 修改历史记录查询表单提交事件
+        // 查询表单提交事件
         document.getElementById('queryBtn').addEventListener('submit', function (event) {
             event.preventDefault();
             const formData = {
