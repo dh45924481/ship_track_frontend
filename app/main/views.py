@@ -1,14 +1,30 @@
 # coding=utf-8
-from flask import Flask, request, redirect, session,url_for,render_template,flash,jsonify
+from flask import (
+    Flask,
+    request,
+    redirect,
+    session,
+    url_for,
+    render_template,
+    flash,
+    jsonify,
+)
 from datetime import datetime, timedelta
 from app import app
 import pymysql
 import time
 import socket
-from app.decorators import admin_required,permission_required
+from app.decorators import admin_required, permission_required
 from app.models import Permission
 from app.models import User
-from flask_login import login_required,LoginManager,login_user,UserMixin,logout_user,current_user
+from flask_login import (
+    login_required,
+    LoginManager,
+    login_user,
+    UserMixin,
+    logout_user,
+    current_user,
+)
 from .. import login_manager
 from . import main
 
@@ -17,15 +33,17 @@ from . import main
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-@main.route('/index',methods=['GET','POST'])
+
+@main.route("/index", methods=["GET", "POST"])
 @login_required
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 @main.errorhandler(403)
 def page_not_found(e):
-    return render_template('404.html'), 403
+    return render_template("404.html"), 403
+
 
 def connect_to_database():
     # 连接数据库
@@ -39,6 +57,7 @@ def connect_to_database():
         # charset='utf8mb4',
     )
     return connection
+
 
 @main.route("/get_history_data")
 def get_history_data():
@@ -59,6 +78,7 @@ def get_history_data():
         if "connection" in locals() and connection is not None:
             connection.close()
 
+
 @main.route("/query_history", methods=["POST"])
 def query_history():
     try:
@@ -73,20 +93,21 @@ def query_history():
             connection.close()
 
 
-
 def get_date_range(time_range):
     """根据时间范围参数计算日期范围的辅助函数"""
     now = datetime.now()
     end_date = now
 
-    if time_range == 'today':
+    if time_range == "today":
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    elif time_range == 'yesterday':
-        start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif time_range == "yesterday":
+        start_date = (now - timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
         end_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    elif time_range == 'week':
+    elif time_range == "week":
         start_date = now - timedelta(days=7)
-    elif time_range == 'month':
+    elif time_range == "month":
         start_date = now - timedelta(days=30)
     else:
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -94,14 +115,14 @@ def get_date_range(time_range):
     return start_date, end_date
 
 
-@app.route('/query', methods=['GET'])
+@app.route("/query", methods=["GET"])
 def query():
     try:
         # 获取查询参数
-        ship_number = request.args.get('shipNumber', '')
-        time_range = request.args.get('timeRange', 'today')
-        position = request.args.get('position', '')
-        page = int(request.args.get('page', 1))
+        ship_number = request.args.get("shipNumber", "")
+        time_range = request.args.get("timeRange", "today")
+        position = request.args.get("position", "")
+        page = int(request.args.get("page", 1))
         per_page = 10  # 每页显示数量
 
         # 计算分页偏移量
@@ -149,7 +170,7 @@ def query():
             with connection.cursor() as cursor:
                 # 执行总数查询
                 cursor.execute(count_query, count_params)
-                total_count = cursor.fetchone()['total']
+                total_count = cursor.fetchone()["total"]
 
                 # 执行主查询
                 cursor.execute(query, params)
@@ -160,26 +181,26 @@ def query():
 
                 # 格式化日期时间
                 for row in results:
-                    if isinstance(row['create_time'], datetime):
-                        row['create_time'] = row['create_time'].strftime('%Y-%m-%d %H:%M:%S')
+                    if isinstance(row["create_time"], datetime):
+                        row["create_time"] = row["create_time"].strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
 
-                return jsonify({
-                    'data': results,
-                    'total_pages': total_pages,
-                    'current_page': page,
-                    'total_count': total_count
-                })
+                return jsonify(
+                    {
+                        "data": results,
+                        "total_pages": total_pages,
+                        "current_page": page,
+                        "total_count": total_count,
+                    }
+                )
 
         finally:
             connection.close()
 
     except Exception as e:
         app.logger.error(f"查询错误: {str(e)}")
-        return jsonify({
-            'error': '查询失败',
-            'message': str(e)
-        }), 500
-
+        return jsonify({"error": "查询失败", "message": str(e)}), 500
 
 
 @main.route("/get_images", methods=["GET"])
@@ -188,16 +209,16 @@ def get_images():
     connection = connect_to_database()
     try:
         with connection.cursor() as cursor:
-            sql = f"""SELECT pic1, pic2, pic3 FROM tbl_boat_result_114 WHERE id = %s"""
+            sql = f"""SELECT pic1, pic2, pic3, pic4, pic5 FROM tbl_boat_result_114 WHERE id = %s"""
             cursor.execute(sql, (id,))
             result = cursor.fetchone()
 
         if result:
             images = []
-            for col in ["pic1", "pic2", "pic3"]:
+            for col in ["pic1", "pic2", "pic3", "pic4", "pic5"]:
                 if result[col]:
                     # 构建静态文件URL
-                    image_url = url_for('static', filename=f'images/{result[col]}')
+                    image_url = url_for("static", filename=f"images/{result[col]}")
                     images.append(image_url)
             return jsonify({"images": images})
         else:
@@ -265,9 +286,6 @@ def getShipInWarn():
             connection.close()
 
 
-
-
-
 # tbl_inout_result 船舶入档推送接口
 def get_put_Into_Gear_data(connection):
     try:
@@ -328,7 +346,6 @@ def Out():
             connection.close()
 
 
-
 # tbl_inout_result 最后一艘船船闸中间速度
 def get_outTime_data(connection):
     try:
@@ -359,9 +376,6 @@ def OutTime():
             connection.close()
 
 
-
-
-
 # tbl_inout_result 船舶出空信号接口
 def get_allOut_data(connection):
     try:
@@ -390,8 +404,6 @@ def allOut():
         # 确保无论是否发生异常，都关闭数据库连接
         if "connection" in locals() and connection is not None:
             connection.close()
-
-
 
 
 # tb_gate_person_monitoring 船舶进闸安全检测接口（行人识别，漂浮物识别，超警戒线识别）
@@ -453,9 +465,6 @@ def down_openDoorSafe():
             connection.close()
 
 
-
-
-
 # tb_mooring_security tbl_rope_result 船舶进闸事件检测接口
 def get_openDoorEvent_data(connection):
     try:
@@ -484,9 +493,6 @@ def openDoorEvent():
         # 确保无论是否发生异常，都关闭数据库连接
         if "connection" in locals() and connection is not None:
             connection.close()
-
-
-
 
 
 # tbl_boat_result
@@ -875,4 +881,3 @@ def Out115():
         # 确保无论是否发生异常，都关闭数据库连接
         if "connection" in locals() and connection is not None:
             connection.close()
-
