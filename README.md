@@ -1,13 +1,12 @@
-
 conda create -n flask python=3.10
 
 conda activate flask
 
 pip install Flask-Migrate==4.0.7 -i https://mirrors.aliyun.com/pypi/simple/
 
-pip install mysql-connector-python==9.1.0  -i https://mirrors.aliyun.com/pypi/simple/
+pip install mysql-connector-python==9.1.0 -i https://mirrors.aliyun.com/pypi/simple/
 
-pip install Flask-Login==0.6.3  -i https://mirrors.aliyun.com/pypi/simple/
+pip install Flask-Login==0.6.3 -i https://mirrors.aliyun.com/pypi/simple/
 
 pip install pymysql -i https://mirrors.aliyun.com/pypi/simple/
 
@@ -23,7 +22,18 @@ config.py配置中的SQLALCHEMY_DATABASE_URI修改为自己的数据库连接配
 
 4.运行Role.insert_roles()，初始化用户角色。
 
-5.u = models.User(username='xxx', password='xxx')
-  db.session.add(u)
+5.u = models.User(username='xxx', password='xxx') db.session.add(u)
 
-  用来创建用户，用户信息保存在mysql数据库中。
+用来创建用户，用户信息保存在mysql数据库中。
+
+gunicorn --workers=4 --bind=0.0.0.0:5000 --worker-class=gthread --threads=128 run:app
+
+nohup python -m gunicorn -w 5 -b 0.0.0.0:5000 -t 120 run:app > app.log 2>&1 &
+
+pip install -r requirements.txt
+
+pkill -f gunicorn
+
+nohup gunicorn -c gunicorn.conf.py run:app > gunicorn.log 2>&1 &
+
+tail -f gunicorn.log
