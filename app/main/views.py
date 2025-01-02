@@ -17,6 +17,8 @@ from . import main
 from ..database import DatabasePool, execute_query
 from .. import login_manager
 from ..models import User
+import pytz
+import time
 
 # 设置图片上传路径
 IMAGE_PATH = os.path.join(
@@ -128,11 +130,25 @@ def get_openDoorEvent_data_syy():
 
 
 def get_openDoorEvent_data_syz():
-    sql = """SELECT object_id,type
-            FROM tbl_rope_result
-            WHERE object_id = 201
-            ORDER BY create_time DESC LIMIT 1"""
-    return execute_query(sql)
+    try:
+        sql = """SELECT object_id, type, create_time
+                FROM tbl_rope_result
+                WHERE object_id = 201
+                ORDER BY create_time DESC LIMIT 1"""
+        result = execute_query(sql)
+        if result:
+            # 格式化时间为字符串，数据库已设置为东八区时区
+            for row in result:
+                if "create_time" in row and row["create_time"]:
+                    row["create_time"] = row["create_time"].strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+        return result
+    except Exception as e:
+        current_app.logger.error(
+            f"Database error in get_openDoorEvent_data_syz: {str(e)}"
+        )
+        raise
 
 
 def get_openDoorEvent_data_xyy():
@@ -216,58 +232,76 @@ def get_out_data_115():
 
 def get_latest_data(currentPage=1, per_page=10):
     """获取最新的船舶数据"""
-    try:
-        offset = (currentPage - 1) * per_page
+    max_retries = 3
+    retry_delay = 1
 
-        # 获取总记录数
-        count_sql = "SELECT COUNT(*) as total_count FROM tbl_boat_result_114"
-        count_result = execute_query(count_sql)
-        if not count_result:
-            return [], 0
-        total_count = count_result[0]["total_count"]
+    for attempt in range(max_retries):
+        try:
+            offset = (currentPage - 1) * per_page
 
-        # 获取分页数据
-        data_sql = """
-            SELECT id, direction, name, create_time, pic1, pic2, pic3, pic4, pic5
-            FROM tbl_boat_result_114
-            ORDER BY create_time DESC
-            LIMIT %s OFFSET %s
-        """
-        recent_ships = execute_query(data_sql, (per_page, offset))
+            # 获取总记录数
+            count_sql = "SELECT COUNT(*) as total_count FROM tbl_boat_result_114"
+            count_result = execute_query(count_sql)
+            if not count_result:
+                return [], 0
 
-        # 格式化数据
-        formatted_ships = []
-        for ship in recent_ships:
-            formatted_ship = {
-                "id": ship["id"],
-                "direction": ship["direction"],
-                "name": ship["name"],
-                "create_time": (
-                    ship["create_time"].strftime("%Y-%m-%d %H:%M:%S")
-                    if isinstance(ship["create_time"], datetime)
-                    else str(ship["create_time"])
-                ),
-                "images": [],
-                "pic1": ship.get("pic1", ""),
-                "pic2": ship.get("pic2", ""),
-                "pic3": ship.get("pic3", ""),
-                "pic4": ship.get("pic4", ""),
-                "pic5": ship.get("pic5", ""),
-            }
-            # 添加图片URL
-            for i in range(1, 6):
-                pic_key = f"pic{i}"
-                if ship.get(pic_key):
-                    image_url = url_for(
-                        "static", filename=f"images/{ship[pic_key]}", _external=True
+            total_count = count_result[0]["total_count"]
+
+            # 获取分页数据
+            data_sql = """
+                SELECT id, direction, name, create_time, pic1, pic2, pic3, pic4, pic5
+                FROM tbl_boat_result_114
+                ORDER BY create_time DESC
+                LIMIT %s OFFSET %s
+            """
+            recent_ships = execute_query(data_sql, (per_page, offset))
+
+            # 格式化数据
+            formatted_ships = []
+            for ship in recent_ships:
+                # 确保时间使用正确的时区
+                if isinstance(ship["create_time"], datetime):
+                    local_time = (
+                        ship["create_time"]
+                        .replace(tzinfo=pytz.UTC)
+                        .astimezone(current_app.config["TIMEZONE"])
                     )
-                    formatted_ship["images"].append(image_url)
-            formatted_ships.append(formatted_ship)
+                    time_str = local_time.strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    time_str = str(ship["create_time"])
 
-        return formatted_ships, total_count
-    except Exception as e:
-        current_app.logger.error(f"获取船舶数据失败: {str(e)}")
-        return [], 0
+                formatted_ship = {
+                    "id": ship["id"],
+                    "direction": ship["direction"],
+                    "name": ship["name"],
+                    "create_time": time_str,
+                    "images": [],
+                    "pic1": ship.get("pic1", ""),
+                    "pic2": ship.get("pic2", ""),
+                    "pic3": ship.get("pic3", ""),
+                    "pic4": ship.get("pic4", ""),
+                    "pic5": ship.get("pic5", ""),
+                }
+                # 添加图片URL
+                for i in range(1, 6):
+                    pic_key = f"pic{i}"
+                    if ship.get(pic_key):
+                        image_url = url_for(
+                            "static", filename=f"images/{ship[pic_key]}", _external=True
+                        )
+                        formatted_ship["images"].append(image_url)
+                formatted_ships.append(formatted_ship)
+
+            return formatted_ships, total_count
+
+        except Exception as e:
+            if attempt == max_retries - 1:
+                current_app.logger.error(f"获取船舶数据失败(最后一次尝试): {str(e)}")
+                return [], 0
+            current_app.logger.warning(
+                f"获取船舶数据失败(尝试 {attempt + 1}/{max_retries}): {str(e)}"
+            )
+            time.sleep(retry_delay)
 
 
 @main.route("/get_history_data")
