@@ -555,27 +555,35 @@ def Out115():
 @main.route("/query", methods=["GET"])
 def query():
     try:
-        ship_number = request.args.get("shipNumber", "")
-        time_range = request.args.get("timeRange", "today")
+        # 获取查询参数
+        ship_number = request.args.get("shipNumber", "")  # 船舶编号
+        time_range = request.args.get("timeRange", "today")  # 时间范围
+        direction = request.args.get("direction", "")  # 点位方向
         page = int(request.args.get("page", 1))
         per_page = 10
 
         start_date, end_date = get_date_range(time_range)
         offset = (page - 1) * per_page
 
-        # 构建查询SQL
+        # 构建基础查询SQL
         query = """
-            SELECT id,direction,name,create_time
+            SELECT id, direction, name, create_time
             FROM tbl_boat_result_114
             WHERE create_time BETWEEN %s AND %s
         """
         params = [start_date, end_date]
 
+        # 添加船舶编号条件
         if ship_number:
             query += " AND id LIKE %s"
             params.append(f"%{ship_number}%")
 
-        # 获取总数
+        # 添加点位方向条件
+        if direction:
+            query += " AND direction = %s"
+            params.append(direction)
+
+        # 构建计数查询
         count_query = """
             SELECT COUNT(*) as total
             FROM tbl_boat_result_114
@@ -587,7 +595,11 @@ def query():
             count_query += " AND id LIKE %s"
             count_params.append(f"%{ship_number}%")
 
-        # 添加分页
+        if direction:
+            count_query += " AND direction = %s"
+            count_params.append(direction)
+
+        # 添加分页和排序
         query += " ORDER BY create_time DESC LIMIT %s OFFSET %s"
         params.extend([per_page, offset])
 
@@ -604,16 +616,40 @@ def query():
 
         return jsonify(
             {
+                "code": 0,
+                "message": "success",
                 "data": results,
-                "total_pages": total_pages,
-                "current_page": page,
-                "total_count": total_count,
+                "pagination": {
+                    "total_pages": total_pages,
+                    "current_page": page,
+                    "total_count": total_count,
+                    "per_page": per_page,
+                    "has_next": page < total_pages,
+                    "has_prev": page > 1,
+                },
             }
         )
 
     except Exception as e:
         current_app.logger.error(f"查询错误: {str(e)}")
-        return jsonify({"error": "查询失败", "message": str(e)}), 500
+        return (
+            jsonify(
+                {
+                    "code": -1,
+                    "message": f"查询失败: {str(e)}",
+                    "data": [],
+                    "pagination": {
+                        "total_pages": 0,
+                        "current_page": 1,
+                        "total_count": 0,
+                        "per_page": 10,
+                        "has_next": False,
+                        "has_prev": False,
+                    },
+                }
+            ),
+            500,
+        )
 
 
 @main.route("/get_images", methods=["GET"])

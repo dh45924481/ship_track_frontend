@@ -1120,15 +1120,16 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="position">位置</label>
-                    <select id="position">
+                    <label for="direction">点位方向</label>
+                    <select id="direction">
                         <option value="">全部</option>
-                        <option value="upstream">上游等待区</option>
-                        <option value="chamber">闸室内</option>
-                        <option value="downstream">下游等待区</option>
+                        <option value="201-上游下行">201-上游下行</option>
+                        <option value="101-下游下行">101-下游下行</option>
+                        <option value="102-下游上行">102-下游上行</option>
+                        <option value="202-上游上行">202-上游上行</option>
                     </select>
                 </div>
-                <div class="form-group">
+                <!-- <div class="form-group">
                     <label for="status">状态</label>
                     <select id="status">
                         <option value="">全部</option>
@@ -1136,7 +1137,7 @@
                         <option value="warning">警告</option>
                         <option value="danger">危险</option>
                     </select>
-                </div>
+                </div> -->
                 <div class="query-buttons">
                     <button type="button" class="query-btn secondary" id="resetBtn">重置</button>
                     <button type="button" class="query-btn primary" id="queryBtn">查询</button>
