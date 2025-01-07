@@ -551,6 +551,24 @@ def Out115():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+def get_date_range(time_range):
+    """根据时间范围参数计算日期范围的辅助函数"""
+    now = datetime.now()
+    end_date = now
+
+    if time_range == 'today':
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif time_range == 'yesterday':
+        start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif time_range == 'week':
+        start_date = now - timedelta(days=7)
+    elif time_range == 'month':
+        start_date = now - timedelta(days=30)
+    else:
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    return start_date, end_date
 
 @main.route("/query", methods=["GET"])
 def query():
@@ -575,7 +593,7 @@ def query():
 
         # 添加船舶编号条件
         if ship_number:
-            query += " AND id LIKE %s"
+            query += " AND name LIKE %s"
             params.append(f"%{ship_number}%")
 
         # 添加点位方向条件
@@ -592,7 +610,7 @@ def query():
         count_params = [start_date, end_date]
 
         if ship_number:
-            count_query += " AND id LIKE %s"
+            count_query += " AND name LIKE %s"
             count_params.append(f"%{ship_number}%")
 
         if direction:
