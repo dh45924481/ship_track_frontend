@@ -2129,9 +2129,13 @@
 
       // 重置按钮点击事件
       document.getElementById("resetBtn").onclick = () => {
-        document.getElementById("queryForm").reset();
-        currentPage = 1;
-        updateTable(1);
+        // 重置表单
+        document.getElementById("shipNumber").value = "";
+        document.getElementById("timeRange").value = "today";
+        document.getElementById("direction").value = "";
+
+        // 重新加载查询表格数据
+        updateQueryTable(1);
       };
       // 下游出空检测
       function createxychukong() {
